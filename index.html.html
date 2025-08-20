@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What Kind of Student Are You? – Playful Quiz</title>
+  <style>
+    body {font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg,#fffde7,#fff9c4); color:#333;}
+    .app {max-width: 900px; margin: 30px auto; padding: 25px; background: #fffde7; box-shadow: 0 8px 30px rgba(0,0,0,0.15); border-radius:18px; animation: popin 0.6s ease;}
+    header h1 {font-size: 2rem; color: #d4a017; margin-bottom:6px; text-align:center; text-shadow:1px 1px #fff9c4;}
+    .badge {background: #ffd700; color: #000; padding: 6px 12px; border-radius: 12px; font-size: 1rem; box-shadow:0 0 6px rgba(255,215,0,0.7);}
+    .help {font-size: 0.9rem; color: #555; text-align:center; margin-bottom:10px;}
+    .progress {background: #ffeaa7; height: 14px; border-radius: 7px; overflow: hidden; margin:20px 0; box-shadow: inset 0 0 5px rgba(0,0,0,0.1);}
+    .progress .bar {background: linear-gradient(90deg,#ffd700,#ffeb3b); width:0%; height:100%; transition:width .5s ease;}
+    .q-index {font-size:1rem;color:#555;margin-bottom:6px;}
+    .q-text {font-size:1.4rem;font-weight:600;margin-bottom:8px;color:#b58900;}
+    .q-sub {font-size:1rem;color:#666;margin-bottom:14px;}
+    .choices button {display:block;width:100%;padding:14px;margin:8px 0;font-size:1.05rem;background:#fff;border:2px solid #ffd700;border-radius:10px;cursor:pointer;transition:all .25s ease; box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+    .choices button:hover {background:#fff8d5;transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+    .choices button.selected {background:#ffe066;box-shadow:0 0 10px rgba(255,215,0,0.7);}
+    .nav {display:flex;justify-content:space-between;margin-top:20px;}
+    .btn {padding:12px 20px;font-size:1.05rem;cursor:pointer;background:#ffd700;border:none;border-radius:10px;transition:all .25s ease; box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+    .btn:hover {background:#ffeb3b;transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+    .result {display:none;text-align:center;animation:fadein .6s ease;}
+    .result.visible {display:block;}
+    #rtags {margin-top:14px;font-size:1rem;color:#444;}
+    .tips {margin-top:20px;padding:15px;background:#fff8d5;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.05);text-align:left;line-height:1.5;font-size:0.95rem;}
+    .tips h3 {margin-top:0;color:#b58900;}
+    @keyframes fadein {from{opacity:0;} to{opacity:1;}}
+    @keyframes popin {0%{transform:scale(0.9);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>What Kind of Student Are You? <span class="badge">Quiz Game</span></h1>
+    <div class="help">Answer honestly. Keyboard: use 1/2/3 to pick; ←/→ to navigate.</div>
+  </header>
+  <div id="quiz"></div>
+  <div class="progress"><div class="bar" id="progress-bar"></div></div>
+  <div class="nav">
+    <button class="btn" id="prev">Previous</button>
+    <button class="btn" id="next">Next</button>
+  </div>
+  <div class="result" id="result">
+    <h2>Your Result:</h2>
+    <p id="rtext"></p>
+    <div id="rtags"></div>
+    <div class="tips" id="rtips"></div>
+  </div>
+</div>
+<script>
+const questions=[
+  {q:"Do you set goals and work hard to achieve them?",sub:"Or do you just write them down and forget?",choices:["Yes","No","Sometimes"]},
+  {q:"Are you disciplined and well-organized?",sub:"Or is your desk a chaotic mess by Wednesday?",choices:["Yes","No","Sometimes"]},
+  {q:"Are you not afraid of asking questions and making mistakes?",sub:"Or do you stay quiet to avoid looking silly?",choices:["Yes","No","Sometimes"]},
+  {q:"Do you like sharing your knowledge with others?",sub:"Or do you keep tricks to yourself to stay ahead?",choices:["Yes","No","Sometimes"]},
+  {q:"Do you know your strong and weak points?",sub:"Or do you just guess when asked?",choices:["Yes","No","Sometimes"]},
+  {q:"Can you keep stress and emotions under control?",sub:"Or do you panic before every test?",choices:["Yes","No","Sometimes"]},
+  {q:"Do you spend long hours studying when needed?",sub:"Or do you scroll on your phone and call it 'research'?",choices:["Yes","No","Sometimes"]},
+  {q:"Do you make lots of effort to learn?",sub:"Or do you just memorize last-minute?",choices:["Yes","No","Sometimes"]},
+  {q:"Do you have the right balance between work and play?",sub:"Or do you either cram all night or game all weekend?",choices:["Yes","No","Sometimes"]},
+  {q:"Are you a happy and sociable person?",sub:"Or do you secretly hate group projects?",choices:["Yes","No","Sometimes"]},
+  {q:"Have you ever pretended to understand a lesson just to avoid extra work?",sub:"Tricky honesty check!",choices:["Yes","No","Maybe once…"]},
+  {q:"Do you actually enjoy learning new things?",sub:"Or do you just study for grades?",choices:["Yes","No","Only if it’s easy"]},
+  {q:"Would you help a classmate who struggles, even if it takes your time?",sub:"Or is that their problem?",choices:["Yes","No","Only if they help me back"]},
+  {q:"Do you take notes in class, or just hope you’ll remember?",sub:"",choices:["Always take notes","Never take notes","Only if teacher says 'this will be on the test'"]},
+  {q:"When you’re tired, do you push through or just give up?",sub:"",choices:["Push through!","Give up and nap","Depends how much coffee I’ve had"]}
+];
+let current=0,answers=new Array(questions.length).fill(null);
+
+function render(){
+  const q=questions[current];
+  document.getElementById('quiz').innerHTML=
+    `<div class="q-index">Question ${current+1} of ${questions.length}</div>
+     <div class="q-text">${q.q}</div>
+     <div class="q-sub">${q.sub||""}</div>
+     <div class="choices">
+       ${q.choices.map((c,i)=>`<button class="${answers[current]===i?"selected":""}" onclick="select(${i})">${c}</button>`).join("")}
+     </div>`;
+  document.getElementById('progress-bar').style.width=((current)/questions.length*100)+"%";
+}
+
+function select(i){answers[current]=i;render();}
+document.getElementById('prev').onclick=()=>{if(current>0){current--;render();}};
+document.getElementById('next').onclick=()=>{if(current<questions.length-1){current++;render();}else{showResult();}};
+
+function showResult(){
+  document.getElementById('quiz').style.display='none';
+  document.querySelector('.nav').style.display='none';
+  document.querySelector('.progress').style.display='none';
+  const yes=answers.filter(a=>a===0).length,no=answers.filter(a=>a===1).length;
+  let res="",tips="",extra="";
+  if(yes>no&&yes>=8){
+    res="The (Almost Too) Perfect Student!";
+    tips="You're disciplined, motivated, and balanced—but be careful not to burn out. Share your secrets with others!";
+    extra="Try delegating, scheduling breaks, and mentoring peers to stay energized.";
+  }else if(no>yes&&no>=8){
+    res="The 'I’ll Do It Later' Student!";
+    tips="Procrastination is your middle name. Start small: set one goal (like studying 20 minutes daily) and stick to it.";
+    extra="Use timers, reward yourself, and remove distractions to build consistency.";
+  }else if(answers.includes(2)){
+    res="The Self-Aware (or Sneaky) Student!";
+    tips="You know your flaws. Your honesty is great—now channel it into action!";
+    extra="Focus on one improvement at a time, like note-taking or asking questions.";
+  }else{
+    res="The 'I Could Be Better' Student!";
+    tips="You have potential, but inconsistency holds you back. Pick 1-2 habits (organization, asking questions) to improve.";
+    extra="Plan weekly goals, keep a study journal, and track your wins to stay motivated.";
+  }
+  document.getElementById('rtext').textContent=res;
+  document.getElementById('rtags').textContent=tips;
+  document.getElementById('rtips').innerHTML=`<h3>Improvement Tips:</h3><p>${extra}</p>`;
+  document.getElementById('result').classList.add('visible');
+}
+render();
+</script>
+</body>
+</html>
